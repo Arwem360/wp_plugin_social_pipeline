@@ -17,8 +17,91 @@ final class VD_Social_Generator {
 	/** Máximo de reintentos diferidos ante 429/errores de Gemini. */
 	private const MAX_ATTEMPTS = 3;
 
+	public const AJAX_NOW  = 'vd_social_generate_now';
+	private const NOW_NONCE = 'vd_social_generate_now';
+
 	public function register_hooks(): void {
 		add_action( VD_Social_Scheduler::HOOK_GENERATE, array( $this, 'run' ), 10, 1 );
+
+		if ( is_admin() ) {
+			add_action( 'add_meta_boxes', array( $this, 'add_box' ) );
+			add_action( 'wp_ajax_' . self::AJAX_NOW, array( $this, 'ajax_generate_now' ) );
+			add_action( 'admin_enqueue_scripts', array( $this, 'enqueue_editor' ) );
+		}
+	}
+
+	public function add_box(): void {
+		add_meta_box(
+			'vd_social_generate',
+			__( 'Posteos de redes (pipeline)', 'vd-social-pipeline' ),
+			array( $this, 'render_box' ),
+			'post',
+			'side',
+			'default'
+		);
+	}
+
+	public function render_box( WP_Post $post ): void {
+		$has = VD_Social_Variant::exists_for_source( $post->ID );
+		?>
+		<div class="vd-generate-editor" data-post="<?php echo esc_attr( $post->ID ); ?>">
+			<button type="button" class="button button-primary vd-generate-now" style="width:100%;margin-bottom:8px;"><?php esc_html_e( 'Generar posteos ahora', 'vd-social-pipeline' ); ?></button>
+			<p class="description"><?php esc_html_e( 'Genera las variantes para la cola en el momento, sin esperar el cron. Guardá la nota primero.', 'vd-social-pipeline' ); ?></p>
+			<div class="vd-generate-result">
+				<?php if ( $has ) : ?>
+					<p><a href="<?php echo esc_url( admin_url( 'admin.php?page=' . VD_Social_Admin_Menu::SLUG ) ); ?>"><?php esc_html_e( 'Ya hay posteos en la cola →', 'vd-social-pipeline' ); ?></a></p>
+				<?php endif; ?>
+			</div>
+		</div>
+		<?php
+	}
+
+	public function enqueue_editor( string $hook ): void {
+		if ( 'post.php' !== $hook && 'post-new.php' !== $hook ) {
+			return;
+		}
+		$screen = get_current_screen();
+		if ( ! $screen || 'post' !== $screen->post_type ) {
+			return;
+		}
+		wp_enqueue_script( 'vd-social-admin', VD_SOCIAL_URL . 'admin/js/admin.js', array(), VD_SOCIAL_VERSION, true );
+		wp_localize_script(
+			'vd-social-admin',
+			'vdPipeline',
+			array(
+				'ajaxUrl'    => admin_url( 'admin-ajax.php' ),
+				'nonce'      => wp_create_nonce( self::NOW_NONCE ),
+				'action'     => self::AJAX_NOW,
+				'queueUrl'   => admin_url( 'admin.php?page=' . VD_Social_Admin_Menu::SLUG ),
+				'generating' => __( 'Generando…', 'vd-social-pipeline' ),
+				'error'      => __( 'Error al generar', 'vd-social-pipeline' ),
+			)
+		);
+	}
+
+	/**
+	 * AJAX: genera las variantes de forma SINCRÓNICA (no depende del cron).
+	 */
+	public function ajax_generate_now(): void {
+		check_ajax_referer( self::NOW_NONCE, 'nonce' );
+		$post_id = isset( $_POST['post_id'] ) ? absint( $_POST['post_id'] ) : 0;
+		if ( ! $post_id || ! current_user_can( 'edit_post', $post_id ) ) {
+			wp_send_json_error( array( 'message' => __( 'Sin permisos.', 'vd-social-pipeline' ) ) );
+		}
+		$post = get_post( $post_id );
+		if ( ! $post || 'post' !== $post->post_type ) {
+			wp_send_json_error( array( 'message' => __( 'Solo funciona en entradas.', 'vd-social-pipeline' ) ) );
+		}
+		if ( VD_Social_Variant::exists_for_source( $post_id ) ) {
+			wp_send_json_success( array( 'message' => __( 'Ya había posteos para esta nota. Miralos en la cola.', 'vd-social-pipeline' ) ) );
+		}
+
+		$this->run( $post_id );
+
+		if ( VD_Social_Variant::exists_for_source( $post_id ) ) {
+			wp_send_json_success( array( 'message' => __( '¡Listo! Posteos generados. Abrí la cola de redes.', 'vd-social-pipeline' ) ) );
+		}
+		wp_send_json_error( array( 'message' => __( 'No se generaron. Revisá el Historial y la API de Gemini.', 'vd-social-pipeline' ) ) );
 	}
 
 	/**

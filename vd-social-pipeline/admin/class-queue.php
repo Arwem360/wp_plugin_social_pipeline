@@ -45,7 +45,15 @@ final class VD_Social_Queue {
 			VD_Social_Variant::set_status( $variant_id, VD_Social_Variant::STATUS_APPROVED );
 			// Resetear contador de reintentos por si venía de un error previo.
 			update_post_meta( $variant_id, VD_Social_Variant::M_RETRIES, 0 );
-			VD_Social_Scheduler::enqueue_publish( $variant_id );
+			// Publicar en el momento (no depende del WP-Cron). Si falla, el manager
+			// programa reintentos (esos sí usan el cron / Action Scheduler).
+			( new VD_Social_Publish_Manager() )->publish_variant( $variant_id );
+			$status = VD_Social_Variant::get_status( $variant_id );
+			if ( VD_Social_Variant::STATUS_PUBLISHED === $status ) {
+				$this->redirect( 'published' );
+			} elseif ( VD_Social_Variant::STATUS_ERROR === $status ) {
+				$this->redirect( 'publish_error' );
+			}
 			$this->redirect( 'approved' );
 		}
 

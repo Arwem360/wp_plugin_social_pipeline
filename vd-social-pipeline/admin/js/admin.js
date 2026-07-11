@@ -187,11 +187,58 @@
 		} );
 	}
 
+	function initGenerateNow() {
+		if ( typeof window.vdPipeline === 'undefined' ) {
+			return;
+		}
+		var wrap = document.querySelector( '.vd-generate-editor' );
+		var btn = document.querySelector( '.vd-generate-now' );
+		if ( ! wrap || ! btn ) {
+			return;
+		}
+		var postId = wrap.getAttribute( 'data-post' );
+		var result = wrap.querySelector( '.vd-generate-result' );
+
+		btn.addEventListener( 'click', function () {
+			var original = btn.textContent;
+			btn.disabled = true;
+			btn.textContent = window.vdPipeline.generating;
+
+			var body = new URLSearchParams();
+			body.append( 'action', window.vdPipeline.action );
+			body.append( 'nonce', window.vdPipeline.nonce );
+			body.append( 'post_id', postId );
+
+			fetch( window.vdPipeline.ajaxUrl, {
+				method: 'POST',
+				credentials: 'same-origin',
+				headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+				body: body.toString()
+			} )
+				.then( function ( r ) { return r.json(); } )
+				.then( function ( json ) {
+					var msg = ( json && json.data && json.data.message ) ? json.data.message : ( ( json && json.success ) ? 'OK' : window.vdPipeline.error );
+					if ( result ) {
+						result.innerHTML = '<p' + ( json && json.success ? '' : ' style="color:#b32d2e;"' ) + '>' + msg + '</p>' +
+							( json && json.success ? '<p><a href="' + window.vdPipeline.queueUrl + '">Cola de redes →</a></p>' : '' );
+					}
+				} )
+				.catch( function () {
+					if ( result ) { result.innerHTML = '<p style="color:#b32d2e;">' + window.vdPipeline.error + '</p>'; }
+				} )
+				.finally( function () {
+					btn.disabled = false;
+					btn.textContent = original;
+				} );
+		} );
+	}
+
 	document.addEventListener( 'DOMContentLoaded', function () {
 		initCounters();
 		initTests();
 		initLogoPicker();
 		initAccentSync();
 		initPlacaGenerate();
+		initGenerateNow();
 	} );
 } )();

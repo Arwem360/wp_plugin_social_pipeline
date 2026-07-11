@@ -11,8 +11,10 @@ if ( ! defined( 'ABSPATH' ) ) {
 
 $groups     = VD_Social_Queue::grouped_active();
 $notice_map = array(
-	'approved'  => __( 'Variante aprobada: se está publicando.', 'vd-social-pipeline' ),
-	'discarded' => __( 'Variante descartada.', 'vd-social-pipeline' ),
+	'approved'      => __( 'Variante aprobada: se está publicando.', 'vd-social-pipeline' ),
+	'published'     => __( 'Publicado correctamente.', 'vd-social-pipeline' ),
+	'publish_error' => __( 'No se pudo publicar (ver Historial).', 'vd-social-pipeline' ),
+	'discarded'     => __( 'Variante descartada.', 'vd-social-pipeline' ),
 	'saved'       => __( 'Cambios guardados.', 'vd-social-pipeline' ),
 	'invalid'     => __( 'Variante no válida.', 'vd-social-pipeline' ),
 	'placa_regen' => __( 'Placas regeneradas.', 'vd-social-pipeline' ),
