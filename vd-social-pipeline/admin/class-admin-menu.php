@@ -72,6 +72,10 @@ final class VD_Social_Admin_Menu {
 		if ( ! in_array( $hook_suffix, $this->page_hooks, true ) ) {
 			return;
 		}
+		// La pantalla de ajustes usa el selector de medios para el logo de placas.
+		if ( isset( $this->page_hooks['settings'] ) && $hook_suffix === $this->page_hooks['settings'] ) {
+			wp_enqueue_media();
+		}
 		wp_enqueue_style( 'vd-social-admin', VD_SOCIAL_URL . 'admin/css/admin.css', array(), VD_SOCIAL_VERSION );
 		wp_enqueue_script( 'vd-social-admin', VD_SOCIAL_URL . 'admin/js/admin.js', array(), VD_SOCIAL_VERSION, true );
 		wp_localize_script(

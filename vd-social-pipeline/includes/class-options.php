@@ -49,6 +49,13 @@ final class VD_Social_Options {
 			'meta_ig_user_id'       => '',
 			'meta_access_token'     => '',
 			'meta_graph_version'    => 'v21.0',
+
+			// Módulo Placas (imágenes para Instagram).
+			'placa_logo_id'         => 0,        // ID de adjunto (logo PNG); 0 = wordmark tipográfico.
+			'placa_accent'          => '#E8590C',
+			'placa_handle_domain'   => '@vdeportivo · vermouth-deportivo.com.ar',
+			'placa_show_date'       => true,
+			'placa_use_as_ig_image' => false,    // Fase futura: usar la placa como imagen al publicar en IG.
 		);
 	}
 

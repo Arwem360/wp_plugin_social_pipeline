@@ -126,3 +126,38 @@
 .vd-test-result.vd-err {
 	color: #b32d2e;
 }
+
+/* Placas */
+.vd-placa-queue {
+	border-top: 1px dashed #dcdcde;
+	margin-top: 10px;
+	padding-top: 10px;
+}
+
+.vd-placa-thumbs {
+	display: flex;
+	gap: 12px;
+	margin: 8px 0;
+	flex-wrap: wrap;
+}
+
+.vd-placa-thumb {
+	display: flex;
+	flex-direction: column;
+	gap: 4px;
+	align-items: center;
+}
+
+.vd-placa-thumb img {
+	width: 120px;
+	height: auto;
+	border: 1px solid #dcdcde;
+	border-radius: 4px;
+	background: #222;
+	display: block;
+}
+
+.vd-placa-editor .vd-placa-thumb img {
+	width: 100%;
+	max-width: 220px;
+}

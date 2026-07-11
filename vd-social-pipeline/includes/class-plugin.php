@@ -45,6 +45,10 @@ final class VD_Social_Plugin {
 		( new VD_Social_Generator() )->register_hooks();
 		( new VD_Social_Publish_Manager() )->register_hooks();
 
+		// Módulo Placas (metabox, generación de imágenes, UI). Corre también en
+		// background, por eso se registra en todo contexto.
+		( new VD_Social_Placa_Module() )->register_hooks();
+
 		if ( is_admin() ) {
 			$this->boot_admin();
 		}

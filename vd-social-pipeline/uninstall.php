@@ -25,8 +25,42 @@ if ( ! empty( $variant_ids ) ) {
 }
 
 // Meta dejada en las notas origen.
-foreach ( array( '_vd_social_processed', '_vd_social_gen_attempts' ) as $meta_key ) {
+$source_meta = array(
+	'_vd_social_processed',
+	'_vd_social_gen_attempts',
+	'_vd_social_score',
+	'_vd_social_score_sub',
+	'_vd_social_placa_feed_path',
+	'_vd_social_placa_feed_url',
+	'_vd_social_placa_story_path',
+	'_vd_social_placa_story_url',
+	'_vd_social_placa_lowres',
+	'_vd_social_placa_noimage',
+	'_vd_social_placa_engine',
+	'_vd_social_placa_generated_at',
+);
+foreach ( $source_meta as $meta_key ) {
 	$wpdb->delete( $wpdb->postmeta, array( 'meta_key' => $meta_key ) ); // phpcs:ignore WordPress.DB.DirectDatabaseQuery
+}
+
+// Archivos de placas generados en uploads/vd-placas/.
+$uploads = wp_upload_dir();
+if ( empty( $uploads['error'] ) ) {
+	$placas_dir = trailingslashit( $uploads['basedir'] ) . 'vd-placas';
+	if ( is_dir( $placas_dir ) ) {
+		$it = new RecursiveIteratorIterator(
+			new RecursiveDirectoryIterator( $placas_dir, FilesystemIterator::SKIP_DOTS ),
+			RecursiveIteratorIterator::CHILD_FIRST
+		);
+		foreach ( $it as $file ) {
+			if ( $file->isDir() ) {
+				@rmdir( $file->getPathname() ); // phpcs:ignore WordPress.PHP.NoSilencedErrors, WordPress.WP.AlternativeFunctions
+			} else {
+				@unlink( $file->getPathname() ); // phpcs:ignore WordPress.PHP.NoSilencedErrors, WordPress.WP.AlternativeFunctions
+			}
+		}
+		@rmdir( $placas_dir ); // phpcs:ignore WordPress.PHP.NoSilencedErrors, WordPress.WP.AlternativeFunctions
+	}
 }
 
 // Tabla de log.

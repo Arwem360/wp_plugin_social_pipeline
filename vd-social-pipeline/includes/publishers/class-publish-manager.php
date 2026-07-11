@@ -93,7 +93,7 @@ final class VD_Social_Publish_Manager {
 		}
 
 		if ( VD_Social_Variant::NET_INSTAGRAM === $network ) {
-			$image = $this->featured_image_url( $source );
+			$image = $this->instagram_image_url( $source );
 			return ( new VD_Social_Instagram_Publisher() )->publish( $text, $image );
 		}
 
@@ -103,6 +103,21 @@ final class VD_Social_Publish_Manager {
 			'code'      => '',
 			'message'   => __( 'Red no soportada.', 'vd-social-pipeline' ),
 		);
+	}
+
+	/**
+	 * Imagen para Instagram: la placa (feed) si el toggle está activo y existe;
+	 * si no, la imagen destacada en tamaño "large". Con el toggle apagado el
+	 * comportamiento es idéntico al anterior.
+	 */
+	private function instagram_image_url( int $source ): string {
+		if ( VD_Social_Options::get( 'placa_use_as_ig_image', false ) ) {
+			$placa = (string) get_post_meta( $source, VD_Social_Placa_Storage::M_FEED_URL, true );
+			if ( '' !== $placa ) {
+				return $placa;
+			}
+		}
+		return $this->featured_image_url( $source );
 	}
 
 	/**

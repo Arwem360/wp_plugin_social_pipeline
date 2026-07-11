@@ -36,6 +36,18 @@ final class VD_Social_Autoloader {
 		'VD_Social_X_Publisher'          => 'includes/publishers/class-x-publisher.php',
 		'VD_Social_Facebook_Publisher'   => 'includes/publishers/class-facebook-publisher.php',
 		'VD_Social_Instagram_Publisher'  => 'includes/publishers/class-instagram-publisher.php',
+		// Módulo Placas.
+		'VD_Social_Placa_Module'         => 'includes/placas/class-placa-module.php',
+		'VD_Social_Placa_Metabox'        => 'includes/placas/class-placa-metabox.php',
+		'VD_Social_Placa_Fonts'          => 'includes/placas/class-placa-fonts.php',
+		'VD_Social_Placa_Storage'        => 'includes/placas/class-placa-storage.php',
+		'VD_Social_Placa_Data'           => 'includes/placas/class-placa-data.php',
+		'VD_Social_Placa_Renderer'       => 'includes/placas/class-placa-renderer.php',
+		'VD_Social_Placa_Generator'      => 'includes/placas/class-placa-generator.php',
+		'VD_Social_Placa_Canvas'         => 'includes/placas/class-placa-canvas.php',
+		'VD_Social_Placa_Canvas_Imagick' => 'includes/placas/class-placa-canvas-imagick.php',
+		'VD_Social_Placa_Canvas_GD'      => 'includes/placas/class-placa-canvas-gd.php',
+
 		// Admin.
 		'VD_Social_Admin_Menu'           => 'admin/class-admin-menu.php',
 		'VD_Social_Settings'             => 'admin/class-settings.php',

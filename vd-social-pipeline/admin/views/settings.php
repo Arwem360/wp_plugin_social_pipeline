@@ -167,6 +167,54 @@ $excluded   = is_array( $opts['excluded_categories'] ) ? array_map( 'intval', $o
 			?>
 		</table>
 
+		<h2><?php esc_html_e( 'Placas de Instagram', 'vd-social-pipeline' ); ?></h2>
+		<table class="form-table" role="presentation">
+			<tr>
+				<th scope="row"><?php esc_html_e( 'Logo (PNG)', 'vd-social-pipeline' ); ?></th>
+				<td>
+					<?php
+					$logo_id  = (int) $opts['placa_logo_id'];
+					$logo_url = $logo_id ? wp_get_attachment_image_url( $logo_id, 'medium' ) : '';
+					?>
+					<input type="hidden" id="placa_logo_id" name="<?php echo esc_attr( $key . '[placa_logo_id]' ); ?>" value="<?php echo esc_attr( $logo_id ); ?>" />
+					<div class="vd-logo-preview" style="margin-bottom:8px;">
+						<?php if ( $logo_url ) : ?>
+							<img src="<?php echo esc_url( $logo_url ); ?>" alt="" style="max-height:80px;background:#222;padding:6px;border-radius:4px;" />
+						<?php endif; ?>
+					</div>
+					<button type="button" class="button vd-logo-select"><?php esc_html_e( 'Elegir logo', 'vd-social-pipeline' ); ?></button>
+					<button type="button" class="button vd-logo-remove" <?php echo $logo_id ? '' : 'style="display:none;"'; ?>><?php esc_html_e( 'Quitar', 'vd-social-pipeline' ); ?></button>
+					<p class="description"><?php esc_html_e( 'Opcional. Si no cargás logo, se usa el wordmark tipográfico VERMOUTH / DEPORTIVO.', 'vd-social-pipeline' ); ?></p>
+				</td>
+			</tr>
+			<tr>
+				<th scope="row"><label for="placa_accent"><?php esc_html_e( 'Color de acento', 'vd-social-pipeline' ); ?></label></th>
+				<td>
+					<input type="text" id="placa_accent" class="small-text" name="<?php echo esc_attr( $key . '[placa_accent]' ); ?>" value="<?php echo esc_attr( $opts['placa_accent'] ); ?>" />
+					<input type="color" class="vd-accent-sync" value="<?php echo esc_attr( $opts['placa_accent'] ); ?>" />
+				</td>
+			</tr>
+			<tr>
+				<th scope="row"><label for="placa_handle_domain"><?php esc_html_e( 'Handle · dominio (franja inferior)', 'vd-social-pipeline' ); ?></label></th>
+				<td>
+					<input type="text" id="placa_handle_domain" class="regular-text" name="<?php echo esc_attr( $key . '[placa_handle_domain]' ); ?>" value="<?php echo esc_attr( $opts['placa_handle_domain'] ); ?>" />
+				</td>
+			</tr>
+			<tr>
+				<th scope="row"><?php esc_html_e( 'Fecha', 'vd-social-pipeline' ); ?></th>
+				<td>
+					<label><input type="checkbox" name="<?php echo esc_attr( $key . '[placa_show_date]' ); ?>" value="1" <?php checked( ! empty( $opts['placa_show_date'] ) ); ?> /> <?php esc_html_e( 'Mostrar la fecha en la placa', 'vd-social-pipeline' ); ?></label>
+				</td>
+			</tr>
+			<tr>
+				<th scope="row"><?php esc_html_e( 'Publicación en Instagram', 'vd-social-pipeline' ); ?></th>
+				<td>
+					<label><input type="checkbox" name="<?php echo esc_attr( $key . '[placa_use_as_ig_image]' ); ?>" value="1" <?php checked( ! empty( $opts['placa_use_as_ig_image'] ) ); ?> /> <?php esc_html_e( 'Usar la placa (feed 1080×1350) como imagen al publicar en Instagram', 'vd-social-pipeline' ); ?></label>
+					<p class="description"><?php esc_html_e( 'Solo tiene efecto cuando las credenciales de Meta están cargadas. Con el toggle apagado, IG usa la imagen destacada como siempre.', 'vd-social-pipeline' ); ?></p>
+				</td>
+			</tr>
+		</table>
+
 		<?php submit_button(); ?>
 	</form>
 </div>

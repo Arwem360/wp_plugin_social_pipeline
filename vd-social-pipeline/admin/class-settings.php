@@ -52,10 +52,19 @@ final class VD_Social_Settings {
 		$clean = VD_Social_Options::all();
 
 		// Toggles (checkbox ausente = false; están todos en esta misma vista).
-		$clean['pipeline_enabled'] = ! empty( $input['pipeline_enabled'] );
-		$clean['auto_x']           = ! empty( $input['auto_x'] );
-		$clean['auto_facebook']    = ! empty( $input['auto_facebook'] );
-		$clean['auto_instagram']   = ! empty( $input['auto_instagram'] );
+		$clean['pipeline_enabled']      = ! empty( $input['pipeline_enabled'] );
+		$clean['auto_x']                = ! empty( $input['auto_x'] );
+		$clean['auto_facebook']         = ! empty( $input['auto_facebook'] );
+		$clean['auto_instagram']        = ! empty( $input['auto_instagram'] );
+		$clean['placa_show_date']       = ! empty( $input['placa_show_date'] );
+		$clean['placa_use_as_ig_image'] = ! empty( $input['placa_use_as_ig_image'] );
+
+		// Placas.
+		$clean['placa_logo_id']       = isset( $input['placa_logo_id'] ) ? absint( $input['placa_logo_id'] ) : 0;
+		$accent                       = sanitize_hex_color( (string) ( $input['placa_accent'] ?? '' ) );
+		$clean['placa_accent']        = $accent ? $accent : $clean['placa_accent'];
+		$handle                       = sanitize_text_field( (string) ( $input['placa_handle_domain'] ?? '' ) );
+		$clean['placa_handle_domain'] = '' !== $handle ? $handle : $clean['placa_handle_domain'];
 
 		// Texto simple.
 		$model                       = sanitize_text_field( (string) ( $input['gemini_model'] ?? '' ) );

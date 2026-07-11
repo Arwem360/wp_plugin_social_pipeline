@@ -13,8 +13,10 @@ $groups     = VD_Social_Queue::grouped_active();
 $notice_map = array(
 	'approved'  => __( 'Variante aprobada: se está publicando.', 'vd-social-pipeline' ),
 	'discarded' => __( 'Variante descartada.', 'vd-social-pipeline' ),
-	'saved'     => __( 'Cambios guardados.', 'vd-social-pipeline' ),
-	'invalid'   => __( 'Variante no válida.', 'vd-social-pipeline' ),
+	'saved'       => __( 'Cambios guardados.', 'vd-social-pipeline' ),
+	'invalid'     => __( 'Variante no válida.', 'vd-social-pipeline' ),
+	'placa_regen' => __( 'Placas regeneradas.', 'vd-social-pipeline' ),
+	'placa_error' => __( 'No se pudieron generar las placas (ver Historial).', 'vd-social-pipeline' ),
 );
 $notice = isset( $_GET['vd_notice'] ) ? sanitize_key( wp_unslash( $_GET['vd_notice'] ) ) : ''; // phpcs:ignore WordPress.Security.NonceVerification.Recommended
 
@@ -110,6 +112,9 @@ $status_class = array(
 						<button type="submit" name="do" value="discard" class="button"><?php esc_html_e( 'Descartar', 'vd-social-pipeline' ); ?></button>
 					</div>
 				</form>
+				<?php if ( VD_Social_Variant::NET_INSTAGRAM === $network ) : ?>
+					<?php VD_Social_Placa_Module::queue_ui( (int) $source_id, VD_Social_Placa_Storage::read_meta( (int) $source_id ) ); ?>
+				<?php endif; ?>
 			<?php endforeach; ?>
 		</div>
 	<?php endforeach; ?>

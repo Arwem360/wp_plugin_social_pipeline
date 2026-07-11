@@ -201,10 +201,45 @@ vd-social-pipeline/
 
 ---
 
-## Fase 2 (no implementada — código preparado)
+## Módulo Placas (imágenes para Instagram)
+
+Genera automáticamente, para cada nota, dos placas verticales (imagen destacada + título + marca):
+
+- **Feed** 1080×1350 (4:5) → `placa-{post_id}.jpg`
+- **Historia** 1080×1920 (9:16) → `placa-{post_id}-story.jpg`
+
+Se guardan en `wp-content/uploads/vd-placas/{año}/{mes}/`, en JPG calidad 90.
+
+**Cómo se generan:**
+- Automático: al publicar una nota (dentro del job asíncrono del pipeline), si aún no existen.
+- Manual desde el editor: metabox **"Placas de Instagram" → Generar placas** (con vista previa y descarga).
+- Desde la cola: junto a la variante de Instagram, botones **Descargar** (feed/historia) y **Regenerar placas**.
+
+**Motor:** usa **Imagick** si está disponible (mejor texto/degradados) y cae a **GD** si no. El motor
+usado queda registrado en la meta y en el Historial. Requiere las fuentes **Anton** y **Bebas Neue**
+(bundleadas en `assets/fonts/`, licencia OFL).
+
+**Marcador de partido (opcional):** en el editor, metabox **"Placa de Instagram — Marcador"** con dos
+campos: *Marcador* (ej. `2-1`) y *Subtítulo* (ej. `ARGENTINA – SUIZA`). Si quedan vacíos, no se dibuja
+el marcador. Con títulos de 4 líneas el marcador se reduce/sube automáticamente para no colisionar.
+
+**Ajustes (sección "Placas de Instagram"):** logo PNG opcional (si no hay, se usa el wordmark
+tipográfico), color de acento, handle·dominio de la franja inferior, y mostrar/ocultar la fecha.
+
+**Casos borde:** nota sin imagen destacada → fondo de marca + advertencia; imagen de origen < 1080 px de
+ancho → se escala igual y se marca "baja resolución".
+
+**Publicación en Instagram con la placa (preparada, apagada por default):** en Ajustes, el toggle
+*"Usar la placa (feed) como imagen al publicar en Instagram"*. Con el toggle apagado, el publicador de IG
+usa la imagen destacada como siempre. Con el toggle activo y credenciales de Meta cargadas, usa la URL
+pública de la placa 1080×1350 (que ya cumple la relación de aspecto de la API de IG).
+
+> **Fuentes:** si actualizás el plugin y las placas salen sin texto, verificá que existan
+> `assets/fonts/Anton-Regular.ttf` y `assets/fonts/BebasNeue-Regular.ttf`.
+
+## Fase 3 (no implementada — código preparado)
 
 - Adjuntar imagen en X (media upload).
-- Placa para Instagram (imagen + título superpuesto) con GD/Imagick.
 - Hilos de X para notas largas.
 - Canales de WhatsApp y Telegram.
 
