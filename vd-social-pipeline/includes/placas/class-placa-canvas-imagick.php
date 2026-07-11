@@ -118,29 +118,43 @@ final class VD_Social_Placa_Canvas_Imagick extends VD_Social_Placa_Canvas {
 		$y0   = max( 0, $y0 );
 		$y1   = min( $this->h, $y1 );
 		$span = max( 1, $y1 - $y0 );
-		try {
-			$grad = new Imagick();
-			$grad->newPseudoImage( $this->w, $span, 'gradient:' . $this->rgba( $hex, $alpha_top ) . '-' . $this->rgba( $hex, $alpha_bottom ) );
-			$this->img->compositeImage( $grad, Imagick::COMPOSITE_OVER, 0, $y0 );
-			$grad->destroy();
-		} catch ( Exception $e ) {
-			$this->fill_rect( 0, $y0, $this->w, $span, $hex, $alpha_bottom );
+		// Degradado por bandas horizontales (robusto en cualquier build de Imagick).
+		$step = 3;
+		$draw = new ImagickDraw();
+		for ( $y = $y0; $y < $y1; $y += $step ) {
+			$t = ( $y - $y0 ) / $span;
+			$a = (int) round( $alpha_top + ( $alpha_bottom - $alpha_top ) * $t );
+			$draw->setFillColor( new ImagickPixel( $this->rgba( $hex, $a ) ) );
+			$draw->rectangle( 0, $y, $this->w, $y + $step );
 		}
 		if ( $y1 < $this->h ) {
-			$this->fill_rect( 0, $y1, $this->w, $this->h - $y1, $hex, $alpha_bottom );
+			$draw->setFillColor( new ImagickPixel( $this->rgba( $hex, $alpha_bottom ) ) );
+			$draw->rectangle( 0, $y1, $this->w, $this->h );
 		}
+		$this->img->drawImage( $draw );
+		$draw->destroy();
 	}
 
 	public function vignette( float $strength ): void {
-		$s = max( 0.0, min( 1.0, $strength ) );
-		try {
-			$v = new Imagick();
-			$v->newPseudoImage( $this->w, $this->h, 'radial-gradient:' . $this->rgba( '#000000', 0 ) . '-' . $this->rgba( '#000000', (int) round( $s * 255 ) ) );
-			$this->img->compositeImage( $v, Imagick::COMPOSITE_OVER, 0, 0 );
-			$v->destroy();
-		} catch ( Exception $e ) {
-			return; // La viñeta es cosmética; si el pseudo-image no está, se omite.
+		// Viñeta cosmética: oscurecemos sólo las 4 bandas de borde con rectángulos
+		// translúcidos (sin pseudo-imágenes, robusto en cualquier build).
+		$s    = max( 0.0, min( 1.0, $strength ) );
+		$band = (int) round( min( $this->w, $this->h ) * 0.16 );
+		if ( $band < 4 || $s <= 0 ) {
+			return;
 		}
+		$amax = (int) round( $s * 120 );
+		$draw = new ImagickDraw();
+		for ( $i = 0; $i < $band; $i += 3 ) {
+			$a = (int) round( $amax * ( 1 - $i / $band ) );
+			$draw->setFillColor( new ImagickPixel( $this->rgba( '#000000', $a ) ) );
+			$draw->rectangle( 0, $i, $this->w, $i + 3 );                         // arriba
+			$draw->rectangle( 0, $this->h - $i - 3, $this->w, $this->h - $i );   // abajo
+			$draw->rectangle( $i, 0, $i + 3, $this->h );                         // izquierda
+			$draw->rectangle( $this->w - $i - 3, 0, $this->w - $i, $this->h );   // derecha
+		}
+		$this->img->drawImage( $draw );
+		$draw->destroy();
 	}
 
 	/**
@@ -153,12 +167,13 @@ final class VD_Social_Placa_Canvas_Imagick extends VD_Social_Placa_Canvas {
 		$m = $this->img->queryFontMetrics( $draw, $text );
 		$draw->destroy();
 
-		if ( isset( $m['boundingBox'] ) && isset( $m['boundingBox']['x2'] ) ) {
+		// 'width' = ancho de AVANCE (para layout/cajas/centrado); alto/ink por bbox.
+		if ( isset( $m['boundingBox'] ) && isset( $m['boundingBox']['y2'] ) ) {
 			$bb = $m['boundingBox'];
 			return array(
-				'width'    => (int) round( $bb['x2'] - $bb['x1'] ),
+				'width'    => (int) round( $m['textWidth'] ),
 				'height'   => (int) round( $bb['y2'] - $bb['y1'] ),
-				'ink_top'  => (int) round( - $m['ascender'] ), // fallback si bbox raro.
+				'ink_top'  => (int) round( $bb['y1'] ),
 				'ink_left' => (int) round( $bb['x1'] ),
 			);
 		}
@@ -218,40 +233,44 @@ final class VD_Social_Placa_Canvas_Imagick extends VD_Social_Placa_Canvas {
 			return;
 		}
 		$ink_top = $this->ink_top_real( $text, $font, $size );
-		$pad     = $outline_px + max( abs( $shadow_dx ), abs( $shadow_dy ) ) + 6;
-		$lw      = $m['width'] + 2 * $pad;
-		$lh      = $m['height'] + 2 * $pad;
-		$pen_x   = $pad - $m['ink_left'];
-		$base_y  = $pad - $ink_top; // baseline dentro del tile.
+		$pen_x   = $x - $m['ink_left'];
+		$base_y  = $y_top - $ink_top;
 
+		// --- Base garantizada (se ve sí o sí): sombra + contorno + relleno sólido.
+		if ( 0 !== $shadow_dx || 0 !== $shadow_dy ) {
+			$sd = new ImagickDraw();
+			$sd->setFont( $font );
+			$sd->setFontSize( $size );
+			$sd->setFillColor( new ImagickPixel( $this->rgba( $shadow_hex, $shadow_alpha ) ) );
+			$this->img->annotateImage( $sd, $pen_x + $shadow_dx, $base_y + $shadow_dy, 0, $text );
+			$sd->destroy();
+		}
+		if ( $outline_px > 0 ) {
+			$od = new ImagickDraw();
+			$od->setFont( $font );
+			$od->setFontSize( $size );
+			$od->setFillColor( new ImagickPixel( $this->rgba( $outline_hex ) ) );
+			$od->setStrokeColor( new ImagickPixel( $this->rgba( $outline_hex ) ) );
+			$od->setStrokeWidth( $outline_px * 2 );
+			$this->img->annotateImage( $od, $pen_x, $base_y, 0, $text );
+			$od->destroy();
+		}
+		$bd = new ImagickDraw();
+		$bd->setFont( $font );
+		$bd->setFontSize( $size );
+		$bd->setFillColor( new ImagickPixel( $this->rgba( $hex_top ) ) );
+		$this->img->annotateImage( $bd, $pen_x, $base_y, 0, $text );
+		$bd->destroy();
+
+		// --- Mejora: relleno con degradado vertical a través de la máscara del
+		// texto, encima del sólido. Si algo falla, queda el sólido de arriba.
 		try {
-			$out = new Imagick();
-			$out->newImage( $lw, $lh, new ImagickPixel( 'transparent' ) );
-			$out->setImageFormat( 'png' );
+			$pad   = $outline_px + 6;
+			$lw    = $m['width'] + 2 * $pad;
+			$lh    = $m['height'] + 2 * $pad;
+			$lpenx = $pad - $m['ink_left'];
+			$lbase = $pad - $ink_top;
 
-			// 1) Sombra.
-			if ( 0 !== $shadow_dx || 0 !== $shadow_dy ) {
-				$sd = new ImagickDraw();
-				$sd->setFont( $font );
-				$sd->setFontSize( $size );
-				$sd->setFillColor( new ImagickPixel( $this->rgba( $shadow_hex, $shadow_alpha ) ) );
-				$out->annotateImage( $sd, $pen_x + $shadow_dx, $base_y + $shadow_dy, 0, $text );
-				$sd->destroy();
-			}
-
-			// 2) Contorno: texto grueso con stroke del color del contorno.
-			if ( $outline_px > 0 ) {
-				$od = new ImagickDraw();
-				$od->setFont( $font );
-				$od->setFontSize( $size );
-				$od->setFillColor( new ImagickPixel( $this->rgba( $outline_hex ) ) );
-				$od->setStrokeColor( new ImagickPixel( $this->rgba( $outline_hex ) ) );
-				$od->setStrokeWidth( $outline_px * 2 );
-				$out->annotateImage( $od, $pen_x, $base_y, 0, $text );
-				$od->destroy();
-			}
-
-			// 3) Relleno con degradado a través de la máscara del texto.
 			$grad = new Imagick();
 			$grad->newImage( $lw, $lh, new ImagickPixel( 'transparent' ) );
 			$core = new Imagick();
@@ -266,21 +285,16 @@ final class VD_Social_Placa_Canvas_Imagick extends VD_Social_Placa_Canvas {
 			$md->setFont( $font );
 			$md->setFontSize( $size );
 			$md->setFillColor( new ImagickPixel( 'white' ) );
-			$mask->annotateImage( $md, $pen_x, $base_y, 0, $text );
+			$mask->annotateImage( $md, $lpenx, $lbase, 0, $text );
 			$md->destroy();
 
 			$grad->compositeImage( $mask, Imagick::COMPOSITE_DSTIN, 0, 0 );
 			$mask->destroy();
 
-			$out->compositeImage( $grad, Imagick::COMPOSITE_OVER, 0, 0 );
+			$this->img->compositeImage( $grad, Imagick::COMPOSITE_OVER, $x - $pad, $y_top - $pad );
 			$grad->destroy();
-
-			// Volcar sobre el lienzo.
-			$this->img->compositeImage( $out, Imagick::COMPOSITE_OVER, $x - $pad, $y_top - $pad );
-			$out->destroy();
 		} catch ( Exception $e ) {
-			// Fallback: texto plano si algo del pipeline de degradado falla.
-			$this->text_line( $x, $y_top, $text, $font, $size, $hex_top );
+			return; // El sólido ya está dibujado.
 		}
 	}
 

@@ -228,81 +228,74 @@ final class VD_Social_Placa_Canvas_GD extends VD_Social_Placa_Canvas {
 		if ( $m['width'] < 1 || $m['height'] < 1 ) {
 			return;
 		}
-		$pad = $outline_px + max( abs( $shadow_dx ), abs( $shadow_dy ) ) + 4;
-		$lw  = $m['width'] + 2 * $pad;
-		$lh  = $m['height'] + 2 * $pad;
+		list( $px, $py ) = $this->baseline_pen( $x, $y_top, $m );
 
-		$layer = imagecreatetruecolor( $lw, $lh );
-		imagealphablending( $layer, false );
-		imagesavealpha( $layer, true );
-		$transparent = imagecolorallocatealpha( $layer, 0, 0, 0, 127 );
-		imagefilledrectangle( $layer, 0, 0, $lw, $lh, $transparent );
-		imagealphablending( $layer, true );
-
-		// Pen local: ink top-left del texto cae en (pad, pad).
-		$px = $pad - $m['ink_left'];
-		$py = $pad - $m['ink_top'];
-
-		// 1) Sombra.
+		// 1) Sombra (directa sobre el lienzo).
 		if ( 0 !== $shadow_dx || 0 !== $shadow_dy ) {
 			list( $sr, $sg, $sb ) = self::hex2rgb( $shadow_hex );
-			$sc                   = imagecolorallocatealpha( $layer, $sr, $sg, $sb, $this->gd_alpha( $shadow_alpha ) );
-			imagettftext( $layer, $size, 0, $px + $shadow_dx, $py + $shadow_dy, $sc, $font, $text );
+			$sc                   = imagecolorallocatealpha( $this->img, $sr, $sg, $sb, $this->gd_alpha( $shadow_alpha ) );
+			imagettftext( $this->img, $size, 0, $px + $shadow_dx, $py + $shadow_dy, $sc, $font, $text );
 		}
 
 		// 2) Contorno (disco de radio outline_px).
 		if ( $outline_px > 0 ) {
 			list( $or, $og, $ob ) = self::hex2rgb( $outline_hex );
-			$oc                   = imagecolorallocate( $layer, $or, $og, $ob );
+			$oc                   = imagecolorallocate( $this->img, $or, $og, $ob );
 			$r2                   = $outline_px * $outline_px;
 			for ( $ox = -$outline_px; $ox <= $outline_px; $ox++ ) {
 				for ( $oy = -$outline_px; $oy <= $outline_px; $oy++ ) {
-					if ( 0 === $ox && 0 === $oy ) {
+					if ( ( 0 === $ox && 0 === $oy ) || ( $ox * $ox + $oy * $oy ) > $r2 ) {
 						continue;
 					}
-					if ( ( $ox * $ox + $oy * $oy ) > $r2 ) {
-						continue;
-					}
-					imagettftext( $layer, $size, 0, $px + $ox, $py + $oy, $oc, $font, $text );
+					imagettftext( $this->img, $size, 0, $px + $ox, $py + $oy, $oc, $font, $text );
 				}
 			}
 		}
 
-		// 3) Relleno con degradado a través de la máscara del texto.
+		// 3) Base sólida garantizada (color superior del degradado).
+		list( $tr, $tg, $tb ) = self::hex2rgb( $hex_top );
+		$base                 = imagecolorallocate( $this->img, $tr, $tg, $tb );
+		imagettftext( $this->img, $size, 0, $px, $py, $base, $font, $text );
+
+		// 4) Mejora: degradado vertical a través de la máscara del texto,
+		// pintado directo sobre el lienzo (encima de la base).
+		$pad  = 4;
+		$lw   = $m['width'] + 2 * $pad;
+		$lh   = $m['height'] + 2 * $pad;
+		$mpx  = $pad - $m['ink_left'];
+		$mpy  = $pad - $m['ink_top'];
 		$mask = imagecreatetruecolor( $lw, $lh );
 		imagealphablending( $mask, false );
 		imagesavealpha( $mask, true );
 		imagefilledrectangle( $mask, 0, 0, $lw, $lh, imagecolorallocatealpha( $mask, 0, 0, 0, 127 ) );
 		imagealphablending( $mask, true );
-		$white = imagecolorallocate( $mask, 255, 255, 255 );
-		imagettftext( $mask, $size, 0, $px, $py, $white, $font, $text );
+		imagettftext( $mask, $size, 0, $mpx, $mpy, imagecolorallocate( $mask, 255, 255, 255 ), $font, $text );
 
-		list( $tr, $tg, $tb ) = self::hex2rgb( $hex_top );
 		list( $br, $bg, $bb ) = self::hex2rgb( $hex_bottom );
 		$ink_h                = max( 1, $m['height'] );
-
-		imagealphablending( $layer, true );
 		for ( $yy = $pad; $yy < $pad + $m['height']; $yy++ ) {
-			$t  = ( $yy - $pad ) / $ink_h;
-			$rr = (int) round( $tr + ( $br - $tr ) * $t );
-			$gg = (int) round( $tg + ( $bg - $tg ) * $t );
+			$cy = $y_top - $pad + $yy;
+			if ( $cy < 0 || $cy >= $this->h ) {
+				continue;
+			}
+			$t   = ( $yy - $pad ) / $ink_h;
+			$rr  = (int) round( $tr + ( $br - $tr ) * $t );
+			$gg  = (int) round( $tg + ( $bg - $tg ) * $t );
 			$bbc = (int) round( $tb + ( $bb - $tb ) * $t );
 			for ( $xx = 0; $xx < $lw; $xx++ ) {
-				$mc = imagecolorat( $mask, $xx, $yy );
-				$ma = ( $mc >> 24 ) & 0x7F; // 0 opaco..127 transp.
+				$ma = ( imagecolorat( $mask, $xx, $yy ) >> 24 ) & 0x7F;
 				if ( $ma >= 120 ) {
 					continue;
 				}
-				$c = imagecolorallocatealpha( $layer, $rr, $gg, $bbc, $ma );
-				imagesetpixel( $layer, $xx, $yy, $c );
+				$cx = $x - $pad + $xx;
+				if ( $cx < 0 || $cx >= $this->w ) {
+					continue;
+				}
+				$c = imagecolorallocatealpha( $this->img, $rr, $gg, $bbc, $ma );
+				imagesetpixel( $this->img, $cx, $cy, $c );
 			}
 		}
-
-		// Volcar el layer sobre el lienzo (ink top-left → (x, y_top)).
-		imagecopy( $this->img, $layer, $x - $pad, $y_top - $pad, 0, 0, $lw, $lh );
-
 		imagedestroy( $mask );
-		imagedestroy( $layer );
 	}
 
 	public function save_jpeg( string $path, int $quality ): bool {
