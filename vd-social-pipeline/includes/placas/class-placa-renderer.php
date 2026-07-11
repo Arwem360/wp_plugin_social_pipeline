@@ -28,6 +28,7 @@ final class VD_Social_Placa_Renderer {
 		return array(
 			'w'              => 1080,
 			'h'              => 1350,
+			'is_story'       => false,
 			'safe_top'       => 0,
 			'safe_bottom'    => 0,
 			'strip_h'        => 72,
@@ -58,9 +59,10 @@ final class VD_Social_Placa_Renderer {
 		return array(
 			'w'              => 1080,
 			'h'              => 1920,
+			'is_story'       => true,
 			'safe_top'       => 250,
 			'safe_bottom'    => 340,
-			'strip_h'        => 0,
+			'strip_h'        => 72,
 			'side'           => 60,
 			'brand_top'      => 270,
 			'brand_wm_size'  => 58,
@@ -183,23 +185,9 @@ final class VD_Social_Placa_Renderer {
 			);
 		}
 
-		// 10) Franja inferior (feed) o línea handle/dominio (historia).
-		if ( $cfg['strip_h'] > 0 ) {
-			$this->draw_bottom_strip( $c, $data, $cfg, $bebas );
-		} elseif ( isset( $layout['handle_top'] ) ) {
-			$this->draw_handle_domain(
-				$c,
-				(int) round( $cfg['w'] / 2 ),
-				$layout['handle_top'] + (int) round( $layout['handle_h'] / 2 ),
-				(string) $data['handle_domain'],
-				$bebas,
-				34,
-				(string) $data['accent_light'],
-				'#FFFFFF',
-				(string) $data['accent'],
-				self::DIAMOND_R_STRIP
-			);
-		}
+		// 10) Franja inferior naranja (ambas variantes; en historia va arriba de la
+		// zona segura de IG).
+		$this->draw_bottom_strip( $c, $data, $cfg, $bebas );
 
 		// 11) Marco.
 		$this->draw_frame( $c, $cfg, $data );
@@ -215,34 +203,21 @@ final class VD_Social_Placa_Renderer {
 	 * @return array<string,mixed>
 	 */
 	private function layout_block( VD_Social_Placa_Canvas $c, array $data, array $cfg, int $n_lines, string $bebas ): array {
-		$has_date   = '' !== (string) $data['date'];
-		$is_story   = $cfg['strip_h'] <= 0;
-		$leading    = (int) $cfg['title_leading'];
-		$title_h    = $n_lines * $leading;
+		$has_date = '' !== (string) $data['date'];
+		$leading  = (int) $cfg['title_leading'];
+		$title_h  = $n_lines * $leading;
 
-		// Borde inferior del bloque (lo más abajo que puede llegar).
-		if ( $is_story ) {
-			$block_bottom = $cfg['h'] - $cfg['safe_bottom'];
-		} else {
-			$block_bottom = $cfg['h'] - $cfg['strip_h'] - self::FEED_SAFETY;
-		}
+		// La franja apoya sobre el borde inferior (feed) o sobre el límite de la
+		// zona segura de IG (historia). El bloque de texto se ancla arriba de ella.
+		$strip_bottom = $this->strip_bottom( $cfg );
+		$block_bottom = $strip_bottom - $cfg['strip_h'] - self::FEED_SAFETY;
 
-		$out = array( 'has_date' => $has_date );
-
-		$cursor = $block_bottom; // vamos apilando hacia arriba.
-
-		// Línea handle/dominio (solo historia, dentro del bloque anclado).
-		if ( $is_story ) {
-			$hm            = $c->measure( 'X', $bebas, 34 );
-			$handle_h      = max( 34, $hm['height'] );
-			$out['handle_h']   = $handle_h;
-			$out['handle_top'] = $cursor - $handle_h;
-			$cursor        = $out['handle_top'] - self::GAP_BOX_HANDLE;
-		}
+		$out    = array( 'has_date' => $has_date );
+		$cursor = $block_bottom; // apilamos hacia arriba.
 
 		// Caja de fecha.
 		if ( $has_date ) {
-			$date_text = VD_Social_Placa_Data::upper( (string) $data['date'] );
+			$date_text       = VD_Social_Placa_Data::upper( (string) $data['date'] );
 			$out['date_w']   = $this->badge_width( $c, $date_text, $bebas, $cfg['box_font'] );
 			$out['date_top'] = $cursor - $cfg['box_h'];
 			$cursor          = $out['date_top'] - self::GAP_TITLE_BOX;
@@ -257,6 +232,15 @@ final class VD_Social_Placa_Renderer {
 		$out['ribbon_top'] = $cursor - $cfg['ribbon_h'];
 
 		return $out;
+	}
+
+	/**
+	 * Y del borde inferior de la franja naranja.
+	 *
+	 * @param array<string,mixed> $cfg
+	 */
+	private function strip_bottom( array $cfg ): int {
+		return ! empty( $cfg['is_story'] ) ? ( (int) $cfg['h'] - (int) $cfg['safe_bottom'] ) : (int) $cfg['h'];
 	}
 
 	/**
@@ -524,10 +508,9 @@ final class VD_Social_Placa_Renderer {
 	 * @param array<string,mixed> $cfg
 	 */
 	private function draw_bottom_strip( VD_Social_Placa_Canvas $c, array $data, array $cfg, string $bebas ): void {
-		$h      = (int) $cfg['h'];
-		$w      = (int) $cfg['w'];
-		$strip  = (int) $cfg['strip_h'];
-		$top    = $h - $strip;
+		$w     = (int) $cfg['w'];
+		$strip = (int) $cfg['strip_h'];
+		$top   = $this->strip_bottom( $cfg ) - $strip;
 
 		// Barra.
 		$c->fill_rect( 0, $top, $w, $strip, (string) $data['accent'] );

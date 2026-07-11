@@ -2,7 +2,7 @@
 /**
  * Plugin Name:       VD Social Pipeline
  * Description:       Al publicarse una nota, genera con Gemini los posteos para X, Facebook e Instagram, los deja en una cola de aprobación y los publica en cada red (manual o automático). Incluye generación de placas (imágenes) para Instagram.
- * Version:           1.1.2
+ * Version:           1.1.3
  * Requires at least: 6.0
  * Requires PHP:      7.4
  * Author:            Vermouth Deportivo
@@ -21,7 +21,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 // ---------------------------------------------------------------------------
 // Constantes.
 // ---------------------------------------------------------------------------
-define( 'VD_SOCIAL_VERSION', '1.1.2' );
+define( 'VD_SOCIAL_VERSION', '1.1.3' );
 define( 'VD_SOCIAL_FILE', __FILE__ );
 define( 'VD_SOCIAL_DIR', plugin_dir_path( __FILE__ ) );
 define( 'VD_SOCIAL_URL', plugin_dir_url( __FILE__ ) );
