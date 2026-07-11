@@ -199,6 +199,17 @@ final class VD_Social_Placa_Canvas_GD extends VD_Social_Placa_Canvas {
 		);
 	}
 
+	/**
+	 * @return array{height:int,ink_top:int}
+	 */
+	public function vmetrics( string $text, string $font, int $size ): array {
+		$m = $this->measure( $text, $font, $size ); // imagettfbbox ya da tinta fiable en GD.
+		return array(
+			'height'  => $m['height'],
+			'ink_top' => $m['ink_top'],
+		);
+	}
+
 	private function baseline_pen( int $x, int $y_top, array $m ): array {
 		return array( $x - $m['ink_left'], $y_top - $m['ink_top'] );
 	}

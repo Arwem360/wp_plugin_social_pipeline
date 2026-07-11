@@ -57,6 +57,7 @@ final class VD_Social_Settings {
 		$clean['auto_facebook']         = ! empty( $input['auto_facebook'] );
 		$clean['auto_instagram']        = ! empty( $input['auto_instagram'] );
 		$clean['placa_show_date']       = ! empty( $input['placa_show_date'] );
+		$clean['placa_show_category']   = ! empty( $input['placa_show_category'] );
 		$clean['placa_use_as_ig_image'] = ! empty( $input['placa_use_as_ig_image'] );
 
 		// Placas.

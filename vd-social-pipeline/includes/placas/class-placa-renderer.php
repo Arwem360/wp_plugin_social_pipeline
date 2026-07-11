@@ -143,8 +143,8 @@ final class VD_Social_Placa_Renderer {
 			$this->draw_score( $c, $data, $cfg, $anton, $bebas, $title_top, $n_lines );
 		}
 
-		// 7) Cinta de categoría.
-		if ( '' !== (string) $data['category'] ) {
+		// 7) Cinta de categoría (opcional, por default apagada).
+		if ( ! empty( $data['show_category'] ) && '' !== (string) $data['category'] ) {
 			$this->draw_ribbon( $c, $data, $cfg, $bebas, $cfg['side'], $layout['ribbon_top'] );
 		}
 
@@ -464,8 +464,9 @@ final class VD_Social_Placa_Renderer {
 		// Filete de brillo en el borde superior.
 		$c->fill_rect( $rx, $ry, $rw - $notch, 3, (string) $data['accent_light'] );
 
-		// Texto centrado vertical por bbox.
-		$ty = $ry + (int) round( ( $rh - $m['height'] ) / 2 );
+		// Texto centrado vertical por bbox real.
+		$vm = $c->vmetrics( $text, $bebas, $font );
+		$ty = $ry + (int) round( ( $rh - $vm['height'] ) / 2 );
 		$c->text_line( $rx + $pad_x, $ty, $text, $bebas, $font, '#FFFFFF' );
 	}
 
@@ -489,6 +490,7 @@ final class VD_Social_Placa_Renderer {
 		$c->stroke_rect( $x + 4, $y + 4, $w - 8, $h - 8, (string) $data['accent'], 2 );
 
 		$m  = $c->measure( $text, $font, $size );
+		$vm = $c->vmetrics( $text, $font, $size );
 		$r  = self::DIAMOND_R_BOX;
 		$g  = 14;
 		$grp = ( 2 * $r ) + $g + $m['width'] + $g + ( 2 * $r );
@@ -497,7 +499,7 @@ final class VD_Social_Placa_Renderer {
 
 		$this->diamond( $c, $sx + $r, $cy, $r, (string) $data['accent'] );
 		$tx = $sx + 2 * $r + $g;
-		$ty = $y + (int) round( ( $h - $m['height'] ) / 2 );
+		$ty = $y + (int) round( ( $h - $vm['height'] ) / 2 );
 		$c->text_line( $tx, $ty, $text, $font, $size, (string) $data['accent_light'] );
 		$rx = $tx + $m['width'] + $g + $r;
 		$this->diamond( $c, $rx, $cy, $r, (string) $data['accent'] );
@@ -560,22 +562,25 @@ final class VD_Social_Placa_Renderer {
 
 		$g   = 16;
 		$mh  = $c->measure( $handle, $font, $size );
+		$vh  = $c->vmetrics( $handle, $font, $size );
 		$total = $mh['width'];
 		$md    = null;
+		$vd    = null;
 		if ( '' !== $domain ) {
 			$md    = $c->measure( $domain, $font, $size );
+			$vd    = $c->vmetrics( $domain, $font, $size );
 			$total += $g + ( 2 * $r ) + $g + $md['width'];
 		}
 
 		$x = $center_x - (int) round( $total / 2 );
 
-		$c->text_line( $x, $center_y - (int) round( $mh['height'] / 2 ), $handle, $font, $size, $handle_hex );
+		$c->text_line( $x, $center_y - (int) round( $vh['height'] / 2 ), $handle, $font, $size, $handle_hex );
 		$x += $mh['width'];
 
 		if ( '' !== $domain && null !== $md ) {
 			$this->diamond( $c, $x + $g + $r, $center_y, $r, $diamond_hex );
 			$x += $g + 2 * $r + $g;
-			$c->text_line( $x, $center_y - (int) round( $md['height'] / 2 ), $domain, $font, $size, $domain_hex );
+			$c->text_line( $x, $center_y - (int) round( $vd['height'] / 2 ), $domain, $font, $size, $domain_hex );
 		}
 	}
 

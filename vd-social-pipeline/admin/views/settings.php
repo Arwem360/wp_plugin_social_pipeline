@@ -207,6 +207,12 @@ $excluded   = is_array( $opts['excluded_categories'] ) ? array_map( 'intval', $o
 				</td>
 			</tr>
 			<tr>
+				<th scope="row"><?php esc_html_e( 'Categoría', 'vd-social-pipeline' ); ?></th>
+				<td>
+					<label><input type="checkbox" name="<?php echo esc_attr( $key . '[placa_show_category]' ); ?>" value="1" <?php checked( ! empty( $opts['placa_show_category'] ) ); ?> /> <?php esc_html_e( 'Mostrar la cinta de categoría en la placa', 'vd-social-pipeline' ); ?></label>
+				</td>
+			</tr>
+			<tr>
 				<th scope="row"><?php esc_html_e( 'Publicación en Instagram', 'vd-social-pipeline' ); ?></th>
 				<td>
 					<label><input type="checkbox" name="<?php echo esc_attr( $key . '[placa_use_as_ig_image]' ); ?>" value="1" <?php checked( ! empty( $opts['placa_use_as_ig_image'] ) ); ?> /> <?php esc_html_e( 'Usar la placa (feed 1080×1350) como imagen al publicar en Instagram', 'vd-social-pipeline' ); ?></label>

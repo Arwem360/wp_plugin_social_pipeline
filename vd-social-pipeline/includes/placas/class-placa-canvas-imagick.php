@@ -186,6 +186,49 @@ final class VD_Social_Placa_Canvas_Imagick extends VD_Social_Placa_Canvas {
 	}
 
 	/**
+	 * Métricas verticales fiables: renderiza el texto y recorta (trim) para medir
+	 * la tinta real. Evita el queryFontMetrics que reporta alto poco fiable y deja
+	 * el texto descentrado en cajas/franja.
+	 *
+	 * @return array{height:int,ink_top:int}
+	 */
+	public function vmetrics( string $text, string $font, int $size ): array {
+		try {
+			$adv      = max( 40, (int) ceil( $this->measure( $text, $font, $size )['width'] ) + 40 );
+			$ch       = $size * 3 + 60;
+			$baseline = (int) round( $ch * 0.7 );
+			$tmp      = new Imagick();
+			$tmp->newImage( $adv, $ch, new ImagickPixel( 'transparent' ) );
+			$tmp->setImageFormat( 'png' );
+			$d = new ImagickDraw();
+			$d->setFont( $font );
+			$d->setFontSize( $size );
+			$d->setFillColor( new ImagickPixel( 'white' ) );
+			$tmp->annotateImage( $d, 10, $baseline, 0, $text );
+			$d->destroy();
+			$tmp->trimImage( 0 );
+			$h = (int) $tmp->getImageHeight();
+			$tmp->destroy();
+			if ( $h < 1 ) {
+				throw new Exception( 'empty' );
+			}
+			// El texto centrado es SIEMPRE mayúsculas/dígitos (sin descendentes),
+			// así que la tinta llega hasta la base: ink_top = -alto. Robusto y sin
+			// depender del offset de página del trim.
+			return array(
+				'height'  => $h,
+				'ink_top' => - $h,
+			);
+		} catch ( Exception $e ) {
+			$m = $this->measure( $text, $font, $size );
+			return array(
+				'height'  => $m['height'],
+				'ink_top' => $m['ink_top'],
+			);
+		}
+	}
+
+	/**
 	 * Igual que measure pero devuelve el y de la tinta según boundingBox (más fiel).
 	 */
 	private function ink_top_real( string $text, string $font, int $size ): int {
@@ -202,7 +245,7 @@ final class VD_Social_Placa_Canvas_Imagick extends VD_Social_Placa_Canvas {
 
 	public function text_line( int $x, int $y_top, string $text, string $font, int $size, string $hex, int $alpha = 255 ): void {
 		$m       = $this->measure( $text, $font, $size );
-		$ink_top = $this->ink_top_real( $text, $font, $size );
+		$ink_top = $this->vmetrics( $text, $font, $size )['ink_top'];
 		$pen_x   = $x - $m['ink_left'];
 		$base_y  = $y_top - $ink_top;
 		$draw    = new ImagickDraw();

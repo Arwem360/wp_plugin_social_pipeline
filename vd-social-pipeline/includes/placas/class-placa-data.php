@@ -37,6 +37,7 @@ final class VD_Social_Placa_Data {
 			'post_id'       => $post_id,
 			'title'         => $post ? wp_strip_all_tags( get_the_title( $post ) ) : '',
 			'category'      => self::primary_category( $post_id ),
+			'show_category' => (bool) VD_Social_Options::get( 'placa_show_category', false ),
 			'date'          => ( $show_date && $post ) ? self::format_date( $post ) : '',
 			'show_date'     => $show_date,
 			'image_path'    => self::featured_path( $post_id ),

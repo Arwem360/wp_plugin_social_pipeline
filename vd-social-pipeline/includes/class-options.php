@@ -55,6 +55,7 @@ final class VD_Social_Options {
 			'placa_accent'          => '#E8590C',
 			'placa_handle_domain'   => '@vdeportivo · vermouth-deportivo.com.ar',
 			'placa_show_date'       => true,
+			'placa_show_category'   => false,    // Cinta de categoría (default apagada).
 			'placa_use_as_ig_image' => false,    // Fase futura: usar la placa como imagen al publicar en IG.
 		);
 	}

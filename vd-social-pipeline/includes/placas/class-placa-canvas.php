@@ -88,15 +88,24 @@ abstract class VD_Social_Placa_Canvas {
 	 */
 	abstract public function measure( string $text, string $font, int $size ): array;
 
+	/**
+	 * Métricas VERTICALES de tinta reales (alto y desplazamiento respecto de la
+	 * base), medidas de forma fiable para centrar texto en cajas/cintas/franja.
+	 *
+	 * @return array{height:int,ink_top:int}
+	 */
+	abstract public function vmetrics( string $text, string $font, int $size ): array;
+
 	abstract public function text_line( int $x, int $y_top, string $text, string $font, int $size, string $hex, int $alpha = 255 ): void;
 
 	/**
 	 * Centra un texto (por bbox real) dentro de una caja.
 	 */
 	public function text_centered( string $text, string $font, int $size, int $bx, int $by, int $bw, int $bh, string $hex ): void {
-		$m = $this->measure( $text, $font, $size );
-		$x = $bx + (int) round( ( $bw - $m['width'] ) / 2 );
-		$y = $by + (int) round( ( $bh - $m['height'] ) / 2 );
+		$adv = $this->measure( $text, $font, $size )['width'];
+		$vm  = $this->vmetrics( $text, $font, $size );
+		$x   = $bx + (int) round( ( $bw - $adv ) / 2 );
+		$y   = $by + (int) round( ( $bh - $vm['height'] ) / 2 );
 		$this->text_line( $x, $y, $text, $font, $size, $hex );
 	}
 
