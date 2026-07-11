@@ -108,6 +108,19 @@ $excluded   = is_array( $opts['excluded_categories'] ) ? array_map( 'intval', $o
 			<?php $test_button( 'gemini' ); ?>
 		</table>
 
+		<h2><?php esc_html_e( 'Redes activas', 'vd-social-pipeline' ); ?></h2>
+		<table class="form-table" role="presentation">
+			<tr>
+				<th scope="row"><?php esc_html_e( 'Generar y publicar en', 'vd-social-pipeline' ); ?></th>
+				<td>
+					<label><input type="checkbox" name="<?php echo esc_attr( $key . '[net_x_enabled]' ); ?>" value="1" <?php checked( ! empty( $opts['net_x_enabled'] ) ); ?> /> X (Twitter)</label><br />
+					<label><input type="checkbox" name="<?php echo esc_attr( $key . '[net_facebook_enabled]' ); ?>" value="1" <?php checked( ! empty( $opts['net_facebook_enabled'] ) ); ?> /> Facebook</label><br />
+					<label><input type="checkbox" name="<?php echo esc_attr( $key . '[net_instagram_enabled]' ); ?>" value="1" <?php checked( ! empty( $opts['net_instagram_enabled'] ) ); ?> /> Instagram</label>
+					<p class="description"><?php esc_html_e( 'Si desactivás una red, no se genera su variante ni se publica por API. Útil para apagar X y evitar el costo de su API.', 'vd-social-pipeline' ); ?></p>
+				</td>
+			</tr>
+		</table>
+
 		<h2><?php esc_html_e( 'Auto-publicación por red', 'vd-social-pipeline' ); ?></h2>
 		<table class="form-table" role="presentation">
 			<tr>

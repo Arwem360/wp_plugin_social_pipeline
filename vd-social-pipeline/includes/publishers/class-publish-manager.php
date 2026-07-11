@@ -33,6 +33,13 @@ final class VD_Social_Publish_Manager {
 		$network = VD_Social_Variant::get_network( $variant_id );
 		$source  = VD_Social_Variant::get_source( $variant_id );
 
+		// Red desactivada en ajustes: no publicar por API (evita costos).
+		if ( ! VD_Social_Options::network_enabled( $network ) ) {
+			VD_Social_Variant::set_status( $variant_id, VD_Social_Variant::STATUS_DISCARDED );
+			VD_Social_Logger::log( $network, $source, $variant_id, 'info', '', 'Red desactivada en ajustes; no se publica.' );
+			return;
+		}
+
 		// Anti-duplicado: si ya hay una variante publicada para esta nota+red.
 		if ( VD_Social_Variant::already_published( $source, $network, $variant_id ) ) {
 			VD_Social_Variant::set_status( $variant_id, VD_Social_Variant::STATUS_DISCARDED );

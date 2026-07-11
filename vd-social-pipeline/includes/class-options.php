@@ -29,6 +29,12 @@ final class VD_Social_Options {
 			'pipeline_enabled'      => false,
 			'excluded_categories'   => array(),   // IDs de categorías excluidas.
 
+			// Redes activas (default: todas). Si una está apagada, no se genera
+			// su variante ni se publica por API (evita costos, ej. la API de X).
+			'net_x_enabled'         => true,
+			'net_facebook_enabled'  => true,
+			'net_instagram_enabled' => true,
+
 			// Gemini.
 			'gemini_api_key'        => '',
 			'gemini_model'          => 'gemini-3.5-flash',
@@ -98,5 +104,12 @@ final class VD_Social_Options {
 
 	public static function flush_cache(): void {
 		self::$cache = null;
+	}
+
+	/**
+	 * ¿La red está activa? (x | facebook | instagram).
+	 */
+	public static function network_enabled( string $network ): bool {
+		return (bool) self::get( 'net_' . $network . '_enabled', true );
 	}
 }

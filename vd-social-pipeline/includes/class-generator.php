@@ -93,6 +93,10 @@ final class VD_Social_Generator {
 		);
 
 		foreach ( $texts as $network => $text ) {
+			// Red desactivada en ajustes: no generar su variante (evita costos de API).
+			if ( ! VD_Social_Options::network_enabled( $network ) ) {
+				continue;
+			}
 			$text        = trim( wp_strip_all_tags( $text ) );
 			$auto        = (bool) VD_Social_Options::get( 'auto_' . $network, false );
 			$variant_id  = VD_Social_Variant::create( $post_id, $network, $text, VD_Social_Variant::STATUS_PENDING );
@@ -115,6 +119,9 @@ final class VD_Social_Generator {
 	 */
 	private function create_error_variants( int $post_id, string $message ): void {
 		foreach ( VD_Social_Variant::networks() as $network ) {
+			if ( ! VD_Social_Options::network_enabled( $network ) ) {
+				continue;
+			}
 			$variant_id = VD_Social_Variant::create( $post_id, $network, '', VD_Social_Variant::STATUS_ERROR );
 			if ( $variant_id > 0 ) {
 				VD_Social_Variant::mark_error( $variant_id, $message );

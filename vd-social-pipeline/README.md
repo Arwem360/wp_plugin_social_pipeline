@@ -45,6 +45,9 @@ background. Si Gemini falla, la nota se publica igual en el sitio; el error qued
 
 - **Pipeline**: toggle global + categorías excluidas.
 - **Gemini**: API key + modelo. Botón *Probar conexión*.
+- **Redes activas**: activar/desactivar X, Facebook, Instagram. Si desactivás una red, no se
+  genera su variante ni se publica por API. Útil para **apagar X** y evitar el costo de su API
+  (US$ por publicación); podés seguir usando Facebook e Instagram.
 - **Auto-publicación por red**: X / Facebook / Instagram (default: apagado en las tres).
 - **X (OAuth 1.0a)**: Consumer Key/Secret + Access Token/Secret. *Probar conexión*.
 - **Meta**: Page ID (Facebook), IG User ID (Instagram), Access Token de larga duración, versión de la

@@ -53,6 +53,9 @@ final class VD_Social_Settings {
 
 		// Toggles (checkbox ausente = false; están todos en esta misma vista).
 		$clean['pipeline_enabled']      = ! empty( $input['pipeline_enabled'] );
+		$clean['net_x_enabled']         = ! empty( $input['net_x_enabled'] );
+		$clean['net_facebook_enabled']  = ! empty( $input['net_facebook_enabled'] );
+		$clean['net_instagram_enabled'] = ! empty( $input['net_instagram_enabled'] );
 		$clean['auto_x']                = ! empty( $input['auto_x'] );
 		$clean['auto_facebook']         = ! empty( $input['auto_facebook'] );
 		$clean['auto_instagram']        = ! empty( $input['auto_instagram'] );
