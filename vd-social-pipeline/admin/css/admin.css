@@ -127,6 +127,49 @@
 	color: #b32d2e;
 }
 
+/* Cola: barra de paginación */
+.vd-queue-toolbar {
+	display: flex;
+	justify-content: space-between;
+	align-items: center;
+	flex-wrap: wrap;
+	gap: 8px;
+	margin: 12px 0;
+	padding: 8px 12px;
+	background: #fff;
+	border: 1px solid #dcdcde;
+	border-radius: 6px;
+}
+
+.vd-queue-count {
+	font-weight: 600;
+}
+
+.vd-queue-perpage a,
+.vd-queue-perpage strong {
+	margin-left: 6px;
+}
+
+.vd-queue-pagination {
+	margin: 16px 0;
+}
+
+.vd-queue-pagination .page-numbers {
+	display: inline-block;
+	padding: 4px 10px;
+	margin: 0 2px;
+	border: 1px solid #dcdcde;
+	border-radius: 4px;
+	background: #fff;
+	text-decoration: none;
+}
+
+.vd-queue-pagination .page-numbers.current {
+	background: #2271b1;
+	color: #fff;
+	border-color: #2271b1;
+}
+
 /* Placas */
 .vd-placa-queue {
 	border-top: 1px dashed #dcdcde;

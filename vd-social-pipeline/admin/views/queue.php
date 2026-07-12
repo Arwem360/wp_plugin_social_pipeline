@@ -9,7 +9,18 @@ if ( ! defined( 'ABSPATH' ) ) {
 	exit;
 }
 
-$groups     = VD_Social_Queue::grouped_active();
+// phpcs:disable WordPress.Security.NonceVerification.Recommended
+$allowed_pp = array( 5, 10, 20, 50 );
+$per_page   = isset( $_GET['per_page'] ) ? absint( $_GET['per_page'] ) : 10;
+if ( ! in_array( $per_page, $allowed_pp, true ) ) {
+	$per_page = 10;
+}
+$paged = isset( $_GET['paged'] ) ? max( 1, absint( $_GET['paged'] ) ) : 1;
+// phpcs:enable WordPress.Security.NonceVerification.Recommended
+
+$data   = VD_Social_Queue::grouped_active( $paged, $per_page );
+$groups = $data['groups'];
+
 $notice_map = array(
 	'approved'      => __( 'Variante aprobada: se está publicando.', 'vd-social-pipeline' ),
 	'published'     => __( 'Publicado correctamente.', 'vd-social-pipeline' ),
@@ -42,6 +53,31 @@ $status_class = array(
 				<?php esc_html_e( 'El pipeline está desactivado: no se generan posteos nuevos.', 'vd-social-pipeline' ); ?>
 				<a href="<?php echo esc_url( admin_url( 'admin.php?page=' . VD_Social_Admin_Menu::SLUG_SETTINGS ) ); ?>"><?php esc_html_e( 'Activarlo en Ajustes', 'vd-social-pipeline' ); ?></a>.
 			</p>
+		</div>
+	<?php endif; ?>
+
+	<?php if ( $data['total_notes'] > 0 ) : ?>
+		<?php $pp_base = admin_url( 'admin.php?page=' . VD_Social_Admin_Menu::SLUG ); ?>
+		<div class="vd-queue-toolbar">
+			<span class="vd-queue-count">
+				<?php
+				printf(
+					/* translators: %d: cantidad de notas */
+					esc_html( _n( '%d nota en la cola', '%d notas en la cola', (int) $data['total_notes'], 'vd-social-pipeline' ) ),
+					(int) $data['total_notes']
+				);
+				?>
+			</span>
+			<span class="vd-queue-perpage">
+				<?php esc_html_e( 'Ver de a:', 'vd-social-pipeline' ); ?>
+				<?php foreach ( array( 5, 10, 20, 50 ) as $pp ) : ?>
+					<?php if ( (int) $data['per_page'] === $pp ) : ?>
+						<strong><?php echo esc_html( $pp ); ?></strong>
+					<?php else : ?>
+						<a href="<?php echo esc_url( add_query_arg( array( 'per_page' => $pp, 'paged' => 1 ), $pp_base ) ); ?>"><?php echo esc_html( $pp ); ?></a>
+					<?php endif; ?>
+				<?php endforeach; ?>
+			</span>
 		</div>
 	<?php endif; ?>
 
@@ -120,4 +156,22 @@ $status_class = array(
 			<?php endforeach; ?>
 		</div>
 	<?php endforeach; ?>
+
+	<?php if ( $data['total_pages'] > 1 ) : ?>
+		<?php
+		$links = paginate_links(
+			array(
+				'base'      => admin_url( 'admin.php' ) . '?page=' . VD_Social_Admin_Menu::SLUG . '&per_page=' . (int) $data['per_page'] . '&paged=%#%',
+				'format'    => '',
+				'current'   => (int) $data['paged'],
+				'total'     => (int) $data['total_pages'],
+				'prev_text' => '‹ ' . __( 'Anterior', 'vd-social-pipeline' ),
+				'next_text' => __( 'Siguiente', 'vd-social-pipeline' ) . ' ›',
+			)
+		);
+		?>
+		<?php if ( $links ) : ?>
+			<div class="tablenav"><div class="tablenav-pages vd-queue-pagination"><?php echo wp_kses_post( $links ); ?></div></div>
+		<?php endif; ?>
+	<?php endif; ?>
 </div>

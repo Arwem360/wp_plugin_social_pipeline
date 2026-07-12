@@ -78,17 +78,24 @@ final class VD_Social_Queue {
 		exit;
 	}
 
+	/** Tope de variantes activas a considerar (la cola activa es naturalmente chica). */
+	private const SCAN_LIMIT = 600;
+
 	/**
-	 * Variantes activas (pendiente/error/aprobado) agrupadas por nota origen.
+	 * Variantes activas (pendiente/error/aprobado) agrupadas por nota origen,
+	 * paginadas por NOTA (cada grupo trae las 3 variantes juntas).
 	 *
-	 * @return array<int,array{post:?WP_Post,variants:array<int,WP_Post>}>
+	 * @return array{groups:array<int,array{post:?WP_Post,variants:array<int,WP_Post>}>,total_notes:int,total_pages:int,paged:int,per_page:int}
 	 */
-	public static function grouped_active(): array {
+	public static function grouped_active( int $paged = 1, int $per_page = 10 ): array {
+		$per_page = max( 1, $per_page );
+		$paged    = max( 1, $paged );
+
 		$query = new WP_Query(
 			array(
 				'post_type'      => VD_Social_CPT::POST_TYPE,
 				'post_status'    => 'publish',
-				'posts_per_page' => 150,
+				'posts_per_page' => self::SCAN_LIMIT,
 				'orderby'        => 'date',
 				'order'          => 'DESC',
 				'no_found_rows'  => true,
@@ -106,18 +113,30 @@ final class VD_Social_Queue {
 			)
 		);
 
-		$groups = array();
+		// Agrupar todas las variantes por nota (orden: nota con actividad más reciente primero).
+		$all = array();
 		foreach ( $query->posts as $variant ) {
 			$source = (int) get_post_meta( $variant->ID, VD_Social_Variant::M_SOURCE, true );
-			if ( ! isset( $groups[ $source ] ) ) {
-				$groups[ $source ] = array(
+			if ( ! isset( $all[ $source ] ) ) {
+				$all[ $source ] = array(
 					'post'     => get_post( $source ),
 					'variants' => array(),
 				);
 			}
-			$groups[ $source ]['variants'][] = $variant;
+			$all[ $source ]['variants'][] = $variant;
 		}
 
-		return $groups;
+		$total_notes = count( $all );
+		$total_pages = (int) ceil( $total_notes / $per_page );
+		$offset      = ( $paged - 1 ) * $per_page;
+		$groups      = array_slice( $all, $offset, $per_page, true );
+
+		return array(
+			'groups'      => $groups,
+			'total_notes' => $total_notes,
+			'total_pages' => $total_pages,
+			'paged'       => $paged,
+			'per_page'    => $per_page,
+		);
 	}
 }
