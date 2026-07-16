@@ -49,6 +49,16 @@ final class VD_Social_Plugin {
 		// background, por eso se registra en todo contexto.
 		( new VD_Social_Placa_Module() )->register_hooks();
 
+		// Módulo Partidos: sync de fixtures desde la API hacia el CPT del tema.
+		// En todo contexto porque el job corre por WP-Cron (fuera del admin).
+		( new VD_Social_Fixtures_Module() )->register_hooks();
+
+		// Shortcodes de front alimentados por la API de stats.
+		( new VD_Social_Standings_Shortcode() )->register_hooks();      // [vd_posiciones]
+		( new VD_Social_Fixtures_View_Shortcode() )->register_hooks();  // [vd_fixtures]
+		( new VD_Social_Lineups_Shortcode() )->register_hooks();        // [vd_formaciones]
+		( new VD_Social_Events_Shortcode() )->register_hooks();         // [vd_eventos]
+
 		if ( is_admin() ) {
 			$this->boot_admin();
 		}
@@ -59,5 +69,8 @@ final class VD_Social_Plugin {
 		( new VD_Social_Settings() )->register_hooks();
 		( new VD_Social_Queue() )->register_hooks();
 		( new VD_Social_Connection_Test() )->register_hooks();
+
+		// Buscador de partidos en el editor (metabox + AJAX) para copiar shortcodes.
+		( new VD_Social_Fixtures_Finder() )->register_hooks();
 	}
 }

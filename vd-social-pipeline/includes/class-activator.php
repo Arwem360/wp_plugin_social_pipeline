@@ -20,5 +20,6 @@ final class VD_Social_Activator {
 		// Limpiar cron programado por el plugin (Action Scheduler se limpia solo).
 		wp_clear_scheduled_hook( VD_Social_Scheduler::HOOK_GENERATE );
 		wp_clear_scheduled_hook( VD_Social_Scheduler::HOOK_PUBLISH );
+		wp_clear_scheduled_hook( VD_Social_Fixtures_Module::HOOK );
 	}
 }

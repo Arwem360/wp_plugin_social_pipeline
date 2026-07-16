@@ -36,6 +36,16 @@ final class VD_Social_Autoloader {
 		'VD_Social_X_Publisher'          => 'includes/publishers/class-x-publisher.php',
 		'VD_Social_Facebook_Publisher'   => 'includes/publishers/class-facebook-publisher.php',
 		'VD_Social_Instagram_Publisher'  => 'includes/publishers/class-instagram-publisher.php',
+		// Módulo Partidos (sync de fixtures desde la API de estadísticas).
+		'VD_Social_Fixtures_Module'      => 'includes/fixtures/class-fixtures-module.php',
+		'VD_Social_Fixtures_Api_Client'  => 'includes/fixtures/class-fixtures-api-client.php',
+		'VD_Social_Fixtures_Sync'        => 'includes/fixtures/class-fixtures-sync.php',
+		'VD_Social_Fixtures_Logos'       => 'includes/fixtures/class-fixtures-logos.php',
+		'VD_Social_Standings_Shortcode'  => 'includes/fixtures/class-standings-shortcode.php',
+		'VD_Social_Fixtures_View_Shortcode' => 'includes/fixtures/class-fixtures-view-shortcode.php',
+		'VD_Social_Lineups_Shortcode'    => 'includes/fixtures/class-lineups-shortcode.php',
+		'VD_Social_Events_Shortcode'     => 'includes/fixtures/class-events-shortcode.php',
+		'VD_Social_Fixtures_Finder'      => 'includes/fixtures/class-fixtures-finder.php',
 		// Módulo Placas.
 		'VD_Social_Placa_Module'         => 'includes/placas/class-placa-module.php',
 		'VD_Social_Placa_Metabox'        => 'includes/placas/class-placa-metabox.php',

@@ -186,6 +186,16 @@ vd-social-pipeline/
 │   ├── class-generator.php       Gemini → variantes (background)
 │   ├── class-gemini-client.php   Cliente Gemini (salida estructurada, 429)
 │   ├── class-oauth1.php          Firma OAuth 1.0a para X
+│   ├── fixtures/                 Módulo Partidos (sync de fixtures)
+│   │   ├── class-fixtures-module.php      Cron 30 min + submenú + ajustes
+│   │   ├── class-fixtures-api-client.php  Cliente HTTP a la API de stats
+│   │   ├── class-fixtures-sync.php        Upsert al CPT del tema
+│   │   ├── class-fixtures-logos.php       Cache de escudos (1 vez por equipo)
+│   │   ├── class-standings-shortcode.php  Shortcode [vd_posiciones] (tabla)
+│   │   ├── class-fixtures-view-shortcode.php Shortcode [vd_fixtures] (partidos)
+│   │   ├── class-lineups-shortcode.php     Shortcode [vd_formaciones] (cancha)
+│   │   ├── class-events-shortcode.php      Shortcode [vd_eventos] (timeline)
+│   │   └── class-fixtures-finder.php       Metabox buscador de ID (editor)
 │   └── publishers/
 │       ├── class-meta-error.php
 │       ├── class-publish-manager.php   Dispatch + reintentos + anti-duplicados
@@ -239,6 +249,164 @@ pública de la placa 1080×1350 (que ya cumple la relación de aspecto de la API
 
 > **Fuentes:** si actualizás el plugin y las placas salen sin texto, verificá que existan
 > `assets/fonts/Anton-Regular.ttf` y `assets/fonts/BebasNeue-Regular.ttf`.
+
+## Módulo Partidos (sincronización de fixtures)
+
+Trae automáticamente los partidos desde la **API de estadísticas** (servicio Node propio que proxea
+API-Football, normalizado al español) y los inserta/actualiza en el CPT **`vermouth_fixture`** del tema.
+Así la **tabla de posiciones** y los **widgets de resultados** del tema se alimentan solos, sin cargar
+partidos a mano.
+
+**Qué hace, cada 30 minutos:**
+1. Recorre las **ligas configuradas** × los partidos de **hoy y mañana**.
+2. Por cada partido hace **upsert por el ID de la API** (meta `fixture_api_id`): si ya existe lo
+   actualiza, si no lo crea. Nunca duplica.
+3. Escribe en los **mismos meta keys** que el tema ya renderiza (equipos, marcador, estado, fecha,
+   penales, competición) → no hay que tocar el tema.
+
+**Configuración — Social Pipeline → Partidos:**
+- **Sincronización activa**: on/off del job automático.
+- **URL de la API**: base del servicio, sin barra final. Default: `https://vermouth-deportivo.com.ar/statsapi/api`.
+- **Ligas a sincronizar**: IDs de API-Football separados por coma. Default: `128` (Liga Prof.), `129`
+  (Primera Nac.), `13` (Libertadores), `11` (Sudamericana), `130` (Copa Arg.). Editables.
+- **Temporada**: vacío = temporada en curso (recomendado con plan pago de API-Football).
+- Botón **"Sincronizar ahora"**: corre la sync de inmediato (útil para probar).
+
+La pantalla muestra **última sincronización** (con contadores nuevos/actualizados/errores) y **próxima
+ejecución**. Para verificar el dedup: sincronizá dos veces seguidas — la segunda debe decir
+"actualizados", no "nuevos".
+
+**Escudos:** el logo de cada equipo se descarga a la librería de medios **una sola vez** por `team.id`
+(se cachean en la opción `vd_fixtures_team_logos`) y se reutiliza. La primera sync puede tardar unos
+segundos por las descargas.
+
+**Estados:** el estado fino de la API (`estado.corto`: `NS`, `1H`, `HT`, `FT`, `AET`, `PEN`, `PST`,
+`SUSP`, `CANC`…) se guarda en el meta `fixture_estado_corto` y el tema lo traduce a etiquetas legibles
+(Programado, Entretiempo, Final, Final (penales), Postergado, etc.) con
+`vermouth_fixture_estado_label()`. El estado canónico (`proximo`/`live`/`final`) se mantiene para que la
+tabla de posiciones siga contando solo los finalizados.
+
+### Shortcode de tabla de posiciones — `[vd_posiciones]`
+
+Renderiza la **tabla de posiciones** de un torneo, traída de la API (`/api/standings/:liga`) y
+**cacheada 30 min** por transient. Se imprime como **HTML real** (bueno para SEO, funciona aunque el
+visitante no llegue a la API). Pegalo en cualquier página o nota:
+
+```
+[vd_posiciones liga="liga-argentina"]
+[vd_posiciones liga="128" season="2026" fase="Clausura" titulo="Liga Profesional"]
+[vd_posiciones liga="129" forma="no"]
+```
+
+**Atributos:**
+- `liga` (requerido): id numérico de API-Football (ej. `128`) o slug (`liga-argentina`, `primera-nacional`,
+  `libertadores`…).
+- `season` (opcional): vacío = temporada en curso.
+- `fase` (opcional): filtra por nombre de zona/fase. Útil en la Liga Profesional (Apertura/Clausura) o
+  torneos con grupos.
+- `titulo` (opcional): título arriba de la tabla. Por defecto usa el nombre de la liga.
+- `forma` (opcional): `no` para ocultar la columna de racha (default: se muestra).
+
+Muestra posición, escudo, PJ/G/E/P, GF/GC, DG, puntos y forma, con las **zonas coloreadas**
+(clasificación / reducido / descenso) leídas de la API. El CSS es propio pero usa las variables del tema
+(`--color-accent`, etc.) con fallback, así combina solo. Los torneos con varias zonas (grupos,
+Apertura/Clausura) se muestran en tablas separadas.
+
+> La caché se limpia sola a los 30 min. Si querés forzar una actualización inmediata, se puede borrar el
+> transient `vd_standings_*` (o esperar el ciclo).
+
+### Shortcode de partidos — `[vd_fixtures]`
+
+Lista de partidos traída de la API en vivo (server-side, **cacheada 5 min**), agrupada por día, con el
+mismo layout simétrico (nombre + escudo | marcador | escudo + nombre) y el estado (minuto en vivo / Final
+/ hora del partido).
+
+```
+[vd_fixtures liga="128" date="2026-07-13"]
+[vd_fixtures liga="liga-argentina" next="10"]
+[vd_fixtures liga="128" from="2026-07-11" to="2026-07-13"]
+[vd_fixtures equipo="435" last="5" titulo="Últimos de River"]
+[vd_fixtures id="1545443"]
+```
+
+**Atributos:** `liga` (id o slug) **o** `equipo` (id) es obligatorio. Opcionales: `date`, `from`/`to`
+(rango, `YYYY-MM-DD`), `next`/`last` (N partidos), `season`, `id` (un partido puntual), `titulo`,
+`agrupar` (`no` para no separar por día). Las fechas se muestran en la zona horaria del sitio.
+
+> Se diferencia del **widget ⚽ Resultados** del tema: el widget lee del CPT sincronizado (solo las ligas
+> y días que sincroniza el cron); este shortcode consulta la API en el momento, así podés mostrar
+> cualquier liga, rango de fechas, próximos, o los últimos de un equipo.
+
+### Shortcode de formaciones — `[vd_formaciones]`
+
+Dibuja las formaciones de un partido: **cancha** con los titulares posicionados por su `grid`, colores de
+camiseta de cada equipo, suplentes y DT. Server-side, **cacheado 15 min**.
+
+```
+[vd_formaciones fixture="1545443"]
+[vd_formaciones fixture="1545443" equipo="435"]
+```
+
+**Atributos:** `fixture` (id del partido, requerido), `equipo` (id, opcional). Si las formaciones aún no
+están cargadas (salen 20-40 min antes y solo en competencias con cobertura), muestra un aviso en vez de
+la cancha.
+
+### Shortcode de eventos — `[vd_eventos]`
+
+Timeline de eventos de un partido (goles ⚽, tarjetas, cambios, VAR) desde la API, con un encabezado de
+equipos y marcador. Server-side, **cacheado 2 min**.
+
+```
+[vd_eventos fixture="1545443"]
+[vd_eventos fixture="1545443" tipo="goal"]
+```
+
+**Atributos:** `fixture` (id, requerido), `equipo` (id, opcional), `tipo` (`goal` | `card` | `subst` |
+`var`, opcional). Cada evento se ubica a la izquierda o derecha según el equipo, con el minuto en el
+centro. Trae también el partido para armar el encabezado con escudos y marcador.
+
+### Buscar partido en el editor (obtener el ID)
+
+Los shortcodes `[vd_formaciones]` y `[vd_eventos]` necesitan el **id del partido**. Para no buscarlo a
+mano, en el editor de notas y páginas aparece el metabox **"⚽ Buscar partido (shortcodes)"** (columna
+lateral):
+
+1. Elegís una **liga**, y **Por fecha** (con el datepicker) o **Próximos / Últimos** partidos.
+2. Clic en **Buscar** → lista los partidos con equipos, fecha, estado y su ID.
+3. Cada partido trae botones que **copian el shortcode** al portapapeles: **Formaciones**, **Eventos** o
+   **Partido** (`[vd_fixtures id=...]`). Lo pegás en el contenido y listo.
+
+Consulta la API por AJAX (nonce + capability `edit_posts`); no guarda nada, solo ayuda a armar el
+shortcode.
+
+### Programación del cron (IMPORTANTE)
+
+La sync corre por un evento recurrente de WP-Cron (`vd_fixtures_sync`, cada 30 min). Como WordPress solo
+dispara su cron cuando el sitio recibe visitas, en un portal de tráfico bajo hay que usar un **cron real
+del sistema**. En hosting cPanel (BanaHosting):
+
+**1) Desactivar el cron “fantasma”** — en `wp-config.php`, antes de `/* That's all, stop editing! */`:
+
+```php
+define( 'DISABLE_WP_CRON', true );
+```
+
+**2) Cron real en cPanel → Cron Jobs**, cada 15 minutos:
+
+```
+*/15 * * * * curl -s https://vermouth-deportivo.com.ar/wp-cron.php?doing_wp_cron >/dev/null 2>&1
+```
+
+> Se corre cada **15** min aunque la sync sea cada **30**: el cron solo “empuja” a WordPress a chequear
+> tareas vencidas (no genera llamadas extra a la API), y así la sync de 30 min se dispara cerca de
+> horario en vez de llegar tarde. Alternativa con WP-CLI (si está disponible):
+> `cd /home/USUARIO/public_html && wp cron event run --due-now`.
+
+**Requisitos:** la API debe estar deployada en una URL accesible desde el server (no `localhost`), y con
+**plan pago de API-Football** para la temporada en curso (el free solo cubre 2022–2024). El módulo es
+self-contained: su config vive en la opción `vd_fixtures_options`, aparte del pipeline de redes.
+
+---
 
 ## Fase 3 (no implementada — código preparado)
 
